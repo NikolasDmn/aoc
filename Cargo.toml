@@ -1,0 +1,16 @@
+[package]
+name = "aoc"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[[bin]]
+name="1_1"
+path="./01/part1.rs"
+
+
+[[bin]]
+name="1_2"
+path="./01/part2.rs"
+
