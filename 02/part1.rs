@@ -1,8 +1,7 @@
-use itertools::Itertools;
-use std::fs::File;
+use rayon::prelude::*;
 use std::time::Instant;
 
-const EXAMPLE_ANSWER: usize = 3;
+const EXAMPLE_ANSWER: usize = 1227775554;
 
 const GREEN: &str = "\x1b[32m";
 const RED: &str = "\x1b[31m";
@@ -43,16 +42,28 @@ fn main() {
 }
 
 fn solve(input: &str) -> usize {
-    let (_, num_of_zeros) = input
-        .lines()
-        .fold((50, 0), |(location, num_of_zeros), line| {
-            let sign = if line.starts_with('R') { 1 } else { -1 };
-            let length: isize = line[1..].parse().unwrap();
-            let end_location = (location + (sign * length)).rem_euclid(100);
+    input
+        .split(",")
+        .map(|range| range.split("-").collect::<Vec<&str>>())
+        .map(|range_vec| {
             (
-                end_location,
-                num_of_zeros + if end_location == 0 { 1 } else { 0 },
+                range_vec[0].trim().parse::<usize>().unwrap(),
+                range_vec[1].trim().parse::<usize>().unwrap(),
             )
-        });
-    num_of_zeros
+        })
+        .collect::<Vec<(usize, usize)>>()
+        .into_par_iter()
+        .flat_map(|(start, end)| {
+            (start..=end).into_par_iter().filter(|num| {
+                let k = num.checked_ilog10().unwrap_or(0) + 1;
+                if k % 2 == 1 {
+                    return false;
+                }
+                let mid_point = k / 2;
+                let first_part = num / 10usize.pow(mid_point);
+                let second_part = num % 10usize.pow(mid_point);
+                first_part == second_part
+            })
+        })
+        .sum()
 }

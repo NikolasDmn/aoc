@@ -1,8 +1,7 @@
-use itertools::Itertools;
-use std::fs::File;
+use rayon::prelude::*;
 use std::time::Instant;
 
-const EXAMPLE_ANSWER: usize = 3;
+const EXAMPLE_ANSWER: usize = 4174379265;
 
 const GREEN: &str = "\x1b[32m";
 const RED: &str = "\x1b[31m";
@@ -43,16 +42,32 @@ fn main() {
 }
 
 fn solve(input: &str) -> usize {
-    let (_, num_of_zeros) = input
-        .lines()
-        .fold((50, 0), |(location, num_of_zeros), line| {
-            let sign = if line.starts_with('R') { 1 } else { -1 };
-            let length: isize = line[1..].parse().unwrap();
-            let end_location = (location + (sign * length)).rem_euclid(100);
+    input
+        .split(",")
+        .map(|range| range.split("-").collect::<Vec<&str>>())
+        .map(|range_vec| {
             (
-                end_location,
-                num_of_zeros + if end_location == 0 { 1 } else { 0 },
+                range_vec[0].trim().parse::<usize>().unwrap(),
+                range_vec[1].trim().parse::<usize>().unwrap(),
             )
-        });
-    num_of_zeros
+        })
+        .collect::<Vec<(usize, usize)>>()
+        .into_par_iter()
+        .map(|(start, end)| {
+            (start..=end).into_par_iter().filter(|num| {
+                let k = num.checked_ilog10().unwrap_or(0) + 1;
+                (1..=(k / 2))
+                    .filter(|&segment_size| k % segment_size == 0) // Check only valid divisors
+                    .any(|segment_size| {
+                        let divisor = 10usize.pow(segment_size);
+                        let target_chunk = num % divisor;
+                        (1..(k / segment_size)).all(|i| {
+                            let shift = i * segment_size;
+                            (num / 10usize.pow(shift)) % divisor == target_chunk
+                        })
+                    })
+            })
+        })
+        .flatten()
+        .sum()
 }
