@@ -3,6 +3,15 @@ name = "aoc"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "aoc"
+path = "aoc.rs"
+
+[dependencies]
+itertools = "0.14.0"
+rayon = "1.11.0"
+memory-stats = "1.2.0"
+
 [[bin]]
 name = "1_1"
 path = "./01/part1.rs"
@@ -18,10 +27,6 @@ path = "./02/part1.rs"
 [[bin]]
 name = "2_2"
 path = "./02/part2.rs"
-
-[dependencies]
-itertools = "0.14.0"
-rayon = "1.11.0"
 
 [[bin]]
 name="3_1"
@@ -51,4 +56,14 @@ path="./05/part1.rs"
 [[bin]]
 name="5_2"
 path="./05/part2.rs"
+
+
+[[bin]]
+name="6_1"
+path="./06/part1.rs"
+
+
+[[bin]]
+name="6_2"
+path="./06/part2.rs"
 
