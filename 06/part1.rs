@@ -4,7 +4,6 @@ aoc::solution!(EXAMPLE_ANSWER, solve);
 
 
 fn solve(input: &str) -> usize {
-    // 1. Parse into a grid once. No redundant trims.
     let grid: Vec<Vec<&str>> = input
         .lines()
         .map(|line| line.split_whitespace().collect())
