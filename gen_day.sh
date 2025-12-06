@@ -106,7 +106,7 @@ fn solve(input: &str) -> usize {
 
 for PART in 1 2; do
     FILE="$DIR/part$PART.rs"
-    BIN_NAME="${DAY_PAD}_${PART}"
+    BIN_NAME="${DAY_INT}_${PART}"
 
     if [ -f "$FILE" ]; then
         echo -e "${GREEN}✓ $FILE already exists. Skipping.${RESET}"
