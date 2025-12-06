@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 const EXAMPLE_ANSWER: usize = 3;
 
 aoc::solution!(EXAMPLE_ANSWER, solve);
