@@ -66,3 +66,11 @@ path="./06/part1.rs"
 [[bin]]
 name="6_2"
 path="./06/part2.rs"
+
+[[bin]]
+name = "7_1"
+path = "./07/part1.rs"
+
+[[bin]]
+name = "7_2"
+path = "./07/part2.rs"
