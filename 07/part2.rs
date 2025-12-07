@@ -66,50 +66,59 @@ fn solve(input: &str) -> usize {
         .position(|tile| tile == &Tile::Start)
         .unwrap();
 
+    let start_idx = 0;
+    let rows = in_table.len();
+    let cols = in_table[0].len();
+
+    let mut grid_lookup: Vec<Option<usize>> = vec![None; rows * cols];
     let mut arena: Vec<Node> = Vec::with_capacity(in_table.len() * in_table[0].len());
-    let mut node_lookup: HashMap<(usize, usize), usize> = HashMap::new();
 
     let start_node = Node {
         children: vec![],
         memoized_timelines: None,
     };
+
+    let get_flat_idx = |r: usize, c: usize| r * cols + c;
+    grid_lookup[get_flat_idx(2, beam_start_col)] = Some(0); // Point to start node (idx 0)
     arena.push(start_node);
-    let start_idx = 0; 
-    node_lookup.insert((2, beam_start_col), start_idx);
+
+    let mut parent_indices: Vec<usize> = Vec::with_capacity(4);
 
     for row in 1..in_table.len() {
         for col in 0..in_table[row].len() {
             if in_table[row][col] != Tile::Splitter {
                 continue;
             }
-            let mut parent_indices = Vec::new();
+
+                parent_indices.clear();
             for r in (0..row).rev() {
                 if in_table[r][col] != Tile::Empty {
                     break;
                 }
                 // Check Left
-                if let Some(&idx) = node_lookup.get(&(r, col - 1)) {
+                if let Some(idx) = grid_lookup.get(get_flat_idx(r, col - 1)).and_then(|&x| x) {
                     parent_indices.push(idx);
                 }
                 // Check Right
-                if let Some(&idx) = node_lookup.get(&(r, col + 1)) {
+                if let Some(idx) = grid_lookup.get(get_flat_idx(r, col + 1)).and_then(|&x| x) {
                     parent_indices.push(idx);
                 }
             }
-            // Only create a node if it's connected to something
-            if !parent_indices.is_empty() {
-                let new_node_idx = arena.len();
-                for &p_idx in &parent_indices {
-                    arena[p_idx].children.push(new_node_idx);
-                }
-                let current_node = Node {
-                    children: vec![],
-                    memoized_timelines: None,
-                };
-
-                arena.push(current_node);
-                node_lookup.insert((row, col), new_node_idx);
+            if parent_indices.is_empty() {
+                continue;
             }
+            // Only create a node if it's connected to something
+            let new_node_idx = arena.len();
+            for &p_idx in &parent_indices {
+                arena[p_idx].children.push(new_node_idx);
+            }
+            let current_node = Node {
+                children: vec![],
+                memoized_timelines: None,
+            };
+
+            arena.push(current_node);
+            grid_lookup[get_flat_idx(row, col)] = Some(new_node_idx);
         }
     }
     calculate_timelines(start_idx, &mut arena)
