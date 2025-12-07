@@ -9,7 +9,6 @@ use std::rc::Rc;
 const EXPECTED: usize = 40;
 
 aoc::solution!(EXPECTED, solve);
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Tile {
     Empty,
@@ -18,31 +17,30 @@ enum Tile {
     Beam,
 }
 
-type NodeRef = Rc<RefCell<Node>>;
 #[derive(Debug)]
 struct Node {
-    parents: Vec<NodeRef>,
-    children: Vec<NodeRef>,
+    children: Vec<usize>,
     memoized_timelines: Option<usize>,
 }
-fn calculate_timelines(node_ref: &NodeRef) -> usize {
-    let mut node = node_ref.borrow_mut();
-    if let Some(weight) = node.memoized_timelines {
+
+fn calculate_timelines(node_idx: usize, arena: &mut [Node]) -> usize {
+    if let Some(weight) = arena[node_idx].memoized_timelines {
         return weight;
     }
-    if node.children.is_empty() {
-        node.memoized_timelines = Some(2);
+    let children_indices = arena[node_idx].children.clone();
+    if children_indices.is_empty() {
+        arena[node_idx].memoized_timelines = Some(2);
         return 2;
     }
-    let mut total: usize = node
-        .children
-        .iter()
-        .map(|child| calculate_timelines(child))
-        .sum();
-    if node.children.len() % 2 ==  1 {
-        total += 1; // Account for the split
+    let mut total: usize = 0;
+    for child_idx in children_indices.iter() {
+        total += calculate_timelines(*child_idx, arena);
     }
-    node.memoized_timelines = Some(total);
+    // If odd number of children, add one more timeline for the unpaired beam
+    if children_indices.len() % 2 == 1 {
+        total += 1;
+    }
+    arena[node_idx].memoized_timelines = Some(total);
     total
 }
 
@@ -63,49 +61,56 @@ fn solve(input: &str) -> usize {
         })
         .collect();
 
-    let beam_start = in_table[0]
+    let beam_start_col = in_table[0]
         .iter()
         .position(|tile| tile == &Tile::Start)
         .unwrap();
 
-    let mut nodes: HashMap<(usize, usize), NodeRef> = HashMap::new();
-    let start_node = Rc::new(RefCell::new(Node {
-        parents: vec![],
+    let mut arena: Vec<Node> = Vec::with_capacity(in_table.len() * in_table[0].len());
+    let mut node_lookup: HashMap<(usize, usize), usize> = HashMap::new();
+
+    let start_node = Node {
         children: vec![],
         memoized_timelines: None,
-    }));
-    nodes.insert((2, beam_start), Rc::clone(&start_node));
+    };
+    arena.push(start_node);
+    let start_idx = 0; 
+    node_lookup.insert((2, beam_start_col), start_idx);
+
     for row in 1..in_table.len() {
         for col in 0..in_table[row].len() {
             if in_table[row][col] != Tile::Splitter {
                 continue;
             }
-            let current_node = Rc::new(RefCell::new(Node {
-                parents: vec![],
-                children: vec![],
-                memoized_timelines: None,
-            }));
-
+            let mut parent_indices = Vec::new();
             for r in (0..row).rev() {
                 if in_table[r][col] != Tile::Empty {
                     break;
                 }
-
-                if let Some(node) = nodes.get(&(r, col - 1)) {
-                    current_node.borrow_mut().parents.push(Rc::clone(node));
-                    node.borrow_mut().children.push(Rc::clone(&current_node));
+                // Check Left
+                if let Some(&idx) = node_lookup.get(&(r, col - 1)) {
+                    parent_indices.push(idx);
                 }
-                if let Some(node) = nodes.get(&(r, col + 1)) {
-                    current_node.borrow_mut().parents.push(Rc::clone(node));
-                    node.borrow_mut().children.push(Rc::clone(&current_node));
+                // Check Right
+                if let Some(&idx) = node_lookup.get(&(r, col + 1)) {
+                    parent_indices.push(idx);
                 }
             }
-            if !current_node.borrow().parents.is_empty() {
-                nodes.insert((row, col), current_node);
+            // Only create a node if it's connected to something
+            if !parent_indices.is_empty() {
+                let new_node_idx = arena.len();
+                for &p_idx in &parent_indices {
+                    arena[p_idx].children.push(new_node_idx);
+                }
+                let current_node = Node {
+                    children: vec![],
+                    memoized_timelines: None,
+                };
+
+                arena.push(current_node);
+                node_lookup.insert((row, col), new_node_idx);
             }
         }
     }
-
-    let total_timelines = calculate_timelines(nodes.get(&(2, beam_start)).unwrap());
-    total_timelines
+    calculate_timelines(start_idx, &mut arena)
 }
