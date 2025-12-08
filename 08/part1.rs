@@ -7,10 +7,9 @@ const EXPECTED: usize = 40;
 aoc::solution!(EXPECTED, solve);
 
 use std::cmp::Ordering;
-// A custom struct to hold edge info inside the Heap
 #[derive(PartialEq, Debug)]
 struct Edge {
-    dist_sq: i64, // Using i64 to match your exact logic
+    dist_sq: i64,
     u: usize,
     v: usize,
 }
