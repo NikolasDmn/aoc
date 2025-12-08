@@ -6,27 +6,40 @@ aoc::solution!(EXAMPLE_ANSWER, solve);
 
 fn solve(input: &str) -> usize {
     input
-        .split(",")
-        .map(|range| range.split("-").collect::<Vec<&str>>())
-        .map(|range_vec| {
-            (
-                range_vec[0].trim().parse::<usize>().unwrap(),
-                range_vec[1].trim().parse::<usize>().unwrap(),
-            )
+        .split(',')
+        .map(|range| {
+            let mut parts = range.split('-');
+            let start = parts.next().unwrap().trim().parse::<usize>().unwrap();
+            let end = parts.next().unwrap().trim().parse::<usize>().unwrap();
+            (start, end)
         })
-        .collect::<Vec<(usize, usize)>>()
-        .into_par_iter()
-        .flat_map(|(start, end)| {
-            (start..=end).into_par_iter().filter(|num| {
-                let k = num.checked_ilog10().unwrap_or(0) + 1;
-                if k % 2 == 1 {
-                    return false;
-                }
-                let mid_point = k / 2;
-                let first_part = num / 10usize.pow(mid_point);
-                let second_part = num % 10usize.pow(mid_point);
-                first_part == second_part
-            })
-        })
+        .map(|(start, end)| count_valid_in_range(start, end))
         .sum()
+}
+
+fn count_valid_in_range(start: usize, end: usize) -> usize {
+    let mut total_sum = 0;
+    // Use fact that  N = x * (10^k + 1)  where x is in [10^(k-1), 10^k - 1]
+
+    for exp in 1..=9 {
+        let half_start_base = 10usize.pow(exp - 1);
+        let half_end_base = 10usize.pow(exp) - 1;
+        let multiplier = 10usize.pow(exp) + 1;
+
+        let min_x_needed = (start + multiplier - 1) / multiplier;
+        let max_x_needed = end / multiplier;
+
+        // Intersect the mathematical requirements with the digit-length constraints
+        let actual_min_x = min_x_needed.max(half_start_base);
+        let actual_max_x = max_x_needed.min(half_end_base);
+
+        if actual_min_x <= actual_max_x {
+            let count = actual_max_x - actual_min_x + 1;
+            
+            let sum_x = count as u128 * (actual_min_x + actual_max_x) as u128 / 2;
+            total_sum += (sum_x * multiplier as u128) as usize;
+        }
+    }
+
+    total_sum
 }
