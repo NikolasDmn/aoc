@@ -1,4 +1,3 @@
-
 const EXAMPLE_ANSWER: usize = 6;
 
 aoc::solution!(EXAMPLE_ANSWER, solve);
